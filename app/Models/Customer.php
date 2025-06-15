@@ -22,7 +22,7 @@ class Customer extends Model
 
     protected $casts = [
         'points' => 'integer',
-        'total_purchase' => 'decimal:2',
+        'total_pembelian' => 'decimal:2',
         'last_purchase_at' => 'datetime'
     ];
 
@@ -50,13 +50,13 @@ class Customer extends Model
 
     public function updateLoyaltyLevel()
     {
-        $totalPurchase = $this->total_purchase;
+        $totalPembelian = $this->total_pembelian;
         
-        if ($totalPurchase >= 10000000) {
+        if ($totalPembelian >= 50000000) { // 50 juta
             $this->loyalty_level = 'platinum';
-        } elseif ($totalPurchase >= 5000000) {
+        } elseif ($totalPembelian >= 10000000) { // 10 juta
             $this->loyalty_level = 'gold';
-        } elseif ($totalPurchase >= 1000000) {
+        } elseif ($totalPembelian >= 5000000) { // 5 juta
             $this->loyalty_level = 'silver';
         } else {
             $this->loyalty_level = 'bronze';

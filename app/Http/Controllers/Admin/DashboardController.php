@@ -8,6 +8,7 @@ use App\Models\Purchase;
 use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Supplier;
+use App\Models\RawMaterial;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -16,15 +17,19 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Product::all();
         // Data untuk card statistik
         $totalPenjualan = Transaction::where('status', 'selesai')
             ->whereMonth('created_at', Carbon::now()->month)
             ->sum('total_harga');
 
-        $totalPembelian = Purchase::where('status_pembelian', 'received')
-            ->whereMonth('created_at', Carbon::now()->month)
-            ->sum('total_amount');
+        // Ringkasan Pembelian
+        $totalPembelian = DB::table('purchases')
+            ->leftJoin('purchase_details', 'purchases.id', '=', 'purchase_details.pembelian_id')
+            ->whereBetween('purchases.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])
+            ->whereNull('purchases.deleted_at')
+            ->select(DB::raw('SUM(purchase_details.total) as total_pembelian'))
+            ->first()
+            ->total_pembelian ?? 0;
 
         $totalProduk = Product::count();
         $totalPelanggan = Customer::count();
@@ -43,7 +48,7 @@ class DashboardController extends Controller
             ->get();
 
         // Pembelian terbaru
-        $pembelianTerbaru = Purchase::with(['supplier', 'details.product'])
+        $pembelianTerbaru = Purchase::with(['supplier', 'details'])
             ->latest()
             ->take(5)
             ->get();
@@ -60,11 +65,13 @@ class DashboardController extends Controller
             ->get();
 
         // Grafik pembelian bulanan
-        $pembelianBulanan = Purchase::where('status_pembelian', 'received')
-            ->whereYear('created_at', Carbon::now()->year)
+        $pembelianBulanan = DB::table('purchases')
+            ->leftJoin('purchase_details', 'purchases.id', '=', 'purchase_details.pembelian_id')
+            ->whereYear('purchases.created_at', Carbon::now()->year)
+            ->whereNull('purchases.deleted_at')
             ->select(
-                DB::raw('MONTH(created_at) as bulan'),
-                DB::raw('SUM(total_amount) as total')
+                DB::raw('MONTH(purchases.created_at) as bulan'),
+                DB::raw('SUM(purchase_details.total) as total')
             )
             ->groupBy('bulan')
             ->orderBy('bulan')
@@ -79,6 +86,14 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        // Bahan baku terlaris
+        $bahanBakuTerlaris = DB::table('purchase_details')
+            ->join('raw_materials', 'purchase_details.raw_material_id', '=', 'raw_materials.id')
+            ->select('raw_materials.id', 'raw_materials.nama', DB::raw('SUM(purchase_details.total) as total_dibeli'))
+            ->groupBy('raw_materials.id', 'raw_materials.nama')
+            ->orderBy('total_dibeli', 'desc')
+            ->take(5)
+            ->get();
 
         return view('admin.dashboard', compact(
             'totalPenjualan',
@@ -91,7 +106,8 @@ class DashboardController extends Controller
             'pembelianTerbaru',
             'penjualanBulanan',
             'pembelianBulanan',
-            'produkTerlaris'
+            'produkTerlaris',
+            'bahanBakuTerlaris'
         ));
     }
 }

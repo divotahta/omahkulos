@@ -104,31 +104,11 @@
                                 </a>
 
                                 <!-- Laporan -->
-                                <div x-data="{ open: false }" class="relative">
-                                    <button @click="open = !open"
-                                        class="flex items-center justify-between w-full {{ request()->routeIs('admin.reports.*') ? 'bg-blue-100 text-blue-900' : 'bg-white hover:bg-blue-50 text-gray-900' }} rounded-xl font-bold text-sm py-3 px-4">
-                                        <div class="flex items-center">
-                                            <i class="fas fa-chart-bar mr-4"></i>
-                                            Laporan
-                                        </div>
-                                        <i class="fas fa-chevron-down transition-transform"
-                                            :class="{ 'transform rotate-180': open }"></i>
-                                    </button>
-                                    {{-- <div x-show="open" @click.away="open = false" class="mt-2 space-y-1 pl-12">
-                                        <a href="{{ route('admin.reports.sales') }}"
-                                            class="block py-2 px-4 text-sm {{ request()->routeIs('admin.reports.sales') ? 'text-blue-900' : 'text-gray-600 hover:text-gray-900' }}">
-                                            Laporan Penjualan
-                                        </a>
-                                        <a href="{{ route('admin.reports.purchases') }}"
-                                            class="block py-2 px-4 text-sm {{ request()->routeIs('admin.reports.purchases') ? 'text-blue-900' : 'text-gray-600 hover:text-gray-900' }}">
-                                            Laporan Pembelian
-                                        </a>
-                                        <a href="{{ route('admin.reports.stock') }}"
-                                            class="block py-2 px-4 text-sm {{ request()->routeIs('admin.reports.stock') ? 'text-blue-900' : 'text-gray-600 hover:text-gray-900' }}">
-                                            Laporan Stok
-                                        </a>
-                                    </div> --}}
-                                </div>
+                                <a href="{{ route('admin.reports.index') }}"
+                                    class="flex items-center {{ request()->routeIs('admin.reports.*') ? 'bg-blue-100 text-blue-900' : 'bg-white hover:bg-blue-50 text-gray-900' }} rounded-xl font-bold text-sm py-3 px-4">
+                                    <i class="fas fa-chart-bar mr-4"></i>
+                                    Laporan
+                                </a>
 
                                 <!-- Menu Owner -->
                             @else

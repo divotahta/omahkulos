@@ -1,21 +1,21 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Tambah Pembelian Bahan Baku') }}
-        </h2>
+            </h2>
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <a href="{{ route('admin.purchases.index') }}"
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <a href="{{ route('admin.purchases.index') }}"
                 class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Kembali
-            </a>
+        </a>
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
-                    <form action="{{ route('admin.purchases.store') }}" method="POST" id="purchaseForm">
-                        @csrf
+            <div class="p-6 bg-white border-b border-gray-200">
+                <form action="{{ route('admin.purchases.store') }}" method="POST" id="purchaseForm">
+                    @csrf
                         <div class="mb-4">
                             <label for="supplier_id" class="block text-sm font-medium text-gray-700">Supplier</label>
                             <select name="supplier_id" id="supplier_id"
@@ -35,7 +35,7 @@
                                 required>
                         </div>
                         <div class="mb-4">
-                            <label for="catatan" class="block text-sm font-medium text-gray-700">Catatan</label>
+                        <label for="catatan" class="block text-sm font-medium text-gray-700">Catatan</label>
                             <textarea name="catatan" id="catatan" rows="2"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
                         </div>
@@ -108,15 +108,15 @@
                             </div>
                         </div>
                         <div class="flex items-center justify-end mt-4">
-                            <button type="submit"
+                        <button type="submit"
                                 class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                Simpan
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                            Simpan
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
+    </div>
     </div>
     {{-- <script>
         let rowIdx = 1;
@@ -241,7 +241,7 @@
     
         // Saat isi jumlah atau pilih produk berubah
         document.getElementById('produk-table').addEventListener('input', function (e) {
-            const row = e.target.closest('tr');
+                    const row = e.target.closest('tr');
     
             if (e.target.classList.contains('raw-material-select')) {
                 const selected = e.target.options[e.target.selectedIndex];
@@ -274,7 +274,7 @@
                 </td>
                 <td class="px-2 py-1">
                     <input type="number" name="produk[${rowIdx}][jumlah]" class="jumlah-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="1" value="1" required>
-                </td>
+                                        </td>
                 <td class="px-2 py-1">
                     <input type="number" name="produk[${rowIdx}][harga]" class="harga-input mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100" min="0" required readonly>
                 </td>
@@ -300,7 +300,7 @@
                 if (document.querySelectorAll('#produk-table tr').length > 1) {
                     row.remove();
                     hitungGrandTotal();
-                } else {
+                    } else {
                     alert('Minimal satu produk!');
                 }
             }

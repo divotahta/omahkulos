@@ -202,6 +202,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::resource('raw-materials', RawMaterialController::class);
     Route::post('raw-materials/{bahanBaku}/update-stok', [RawMaterialController::class, 'updateStok'])->name('bahan-baku.update-stok');
+
+    // Reports
+    Route::get('/reports', [App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
 });
 
 // Owner Routes

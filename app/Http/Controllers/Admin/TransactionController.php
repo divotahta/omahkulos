@@ -103,6 +103,13 @@ class TransactionController extends Controller
                 $product->decrement('stok', $item['quantity']);
             }
 
+            // Update total pembelian dan loyalty level customer
+            $customer = Customer::findOrFail($request->customer_id);
+            $customer->total_pembelian += $total_harga;
+            $customer->last_purchase_at = now();
+            $customer->save();
+            $customer->updateLoyaltyLevel();
+
             DB::commit();
 
             return redirect()->route('admin.transactions.show', $transaction)
@@ -197,6 +204,13 @@ class TransactionController extends Controller
                 // Kurangi stok
                 $product->decrement('stok', $item['quantity']);
             }
+
+            // Update total pembelian dan loyalty level customer
+            $customer = Customer::findOrFail($request->customer_id);
+            $customer->total_pembelian = $customer->total_pembelian - $transaction->total_harga + $total_harga;
+            $customer->last_purchase_at = now();
+            $customer->save();
+            $customer->updateLoyaltyLevel();
 
             DB::commit();
 

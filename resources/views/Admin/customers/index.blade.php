@@ -100,7 +100,15 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                {{ $customer->loyalty_level == 'bronze' ? 'bg-blue-100 text-bronze-800' : 'bg-green-100 text-green-800' }}">
+                                                @if($customer->loyalty_level == 'bronze')
+                                                    bg-stone-500 text-gray-800
+                                                @elseif($customer->loyalty_level == 'silver')
+                                                    bg-gray-400 text-black
+                                                @elseif($customer->loyalty_level == 'gold')
+                                                    bg-amber-400 text-black
+                                                @elseif($customer->loyalty_level == 'platinum')
+                                                    bg-indigo-600 text-white
+                                                @endif">
                                                 {{ ucfirst($customer->loyalty_level) }}
                                             </span>
                                         </td>

@@ -16,6 +16,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\PDF;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Notification;
 
 class StockController extends Controller
 {
@@ -160,53 +161,99 @@ class StockController extends Controller
 
         // Hitung forecast untuk setiap produk
         foreach ($products as $product) {
-            // Hitung rata-rata penjualan mingguan
+            // Ambil data penjualan 24 minggu terakhir
             $weeklySales = $product->transactionDetails()
-                ->whereBetween('created_at', [now()->subWeeks(4), now()])
-                ->selectRaw('WEEK(created_at) as week, SUM(jumlah) as total')
-                ->groupBy('week')
+                ->whereBetween('created_at', [now()->subWeeks(52), now()])
+                ->selectRaw('WEEK(created_at) as week, YEAR(created_at) as year, SUM(jumlah) as total')
+                ->groupBy('year', 'week')
+                ->orderBy('year')
+                ->orderBy('week')
                 ->get();
 
-            // Hitung rata-rata penjualan per minggu
+            // Hitung rata-rata penjualan mingguan
             $avgWeeklySales = $weeklySales->avg('total') ?? 0;
 
-            // Hitung standar deviasi penjualan mingguan
+            // Hitung standar deviasi penjualan
             $stdDev = 0;
-            if ($weeklySales->count() > 0) {
-                $mean = $weeklySales->avg('total');
-                $variance = $weeklySales->sum(function($sale) use ($mean) {
-                    return pow($sale->total - $mean, 2);
-                }) / $weeklySales->count();
+            if ($weeklySales->count() > 1) {
+                $variance = $weeklySales->sum(function ($sale) use ($avgWeeklySales) {
+                    return pow($sale->total - $avgWeeklySales, 2);
+                }) / ($weeklySales->count() - 1);
                 $stdDev = sqrt($variance);
             }
 
             // Hitung lead time (dalam hari)
             $leadTime = 7; // 7 hari
 
-            // Hitung safety stock dengan service level 95%
-            $serviceLevel = 1.645; // Z-score untuk 95% service level
-            $safetyStock = $serviceLevel * $stdDev * sqrt($leadTime/7);
-
-            // Hitung reorder point
-            $reorderPoint = ($avgWeeklySales * ($leadTime/7)) + $safetyStock;
-
-            // Hitung economic order quantity (EOQ)
-            $orderCost = 100000; // Biaya pemesanan
-            $holdingCost = 0.2; // Biaya penyimpanan (20% dari harga)
-            $annualDemand = $avgWeeklySales * 52; // 52 minggu dalam setahun
+            // Hitung safety stock
+            // Z-score 1.645 untuk service level 95%
+            $serviceLevel = 1.645;
+            // Lead time dalam hari, konversi ke minggu
+            $leadTimeInWeeks = $leadTime / 7;
             
-            if ($product->harga_jual > 0 && $holdingCost > 0) {
-                $eoq = sqrt((2 * $annualDemand * $orderCost) / ($product->harga_jual * $holdingCost));
+            // Jika stdDev = 0, gunakan 20% dari rata-rata penjualan mingguan sebagai safety stock
+            if ($stdDev == 0) {
+                $safetyStock = ceil($avgWeeklySales * 0.2);
             } else {
-                $eoq = 0;
+                $safetyStock = ceil($serviceLevel * $stdDev * sqrt($leadTimeInWeeks));
             }
 
-            // Analisis tren penjualan
-            $trend = 0;
-            if ($weeklySales->count() > 1) {
-                $firstWeek = $weeklySales->first()->total;
-                $lastWeek = $weeklySales->last()->total;
-                $trend = ($lastWeek - $firstWeek) / $weeklySales->count();
+            // Hitung reorder point
+            // Reorder Point = (Rata-rata Penjualan Mingguan × Lead Time dalam minggu) + Safety Stock
+            $reorderPoint = ceil(($avgWeeklySales * $leadTimeInWeeks) + $safetyStock);
+
+            // Hitung EOQ (Economic Order Quantity)
+            // EOQ = √((2 × D × S) / H)
+            // D = Permintaan tahunan (rata-rata mingguan × 52)
+            // S = Biaya pemesanan (Rp 100.000)
+            // H = Biaya penyimpanan per unit per tahun (20% dari harga beli)
+            $orderCost = 100000; // Biaya pemesanan
+            $holdingCost = $product->harga_beli * 0.2; // 20% dari harga beli
+            $annualDemand = $avgWeeklySales * 52;
+
+            if ($holdingCost > 0) {
+                $eoq = ceil(sqrt((2 * $annualDemand * $orderCost) / $holdingCost));
+            } else {
+                $eoq = ceil($avgWeeklySales * 2); // Fallback ke 2x rata-rata penjualan mingguan
+            }
+
+            // Hitung forecast minggu depan
+            $nextWeekForecast = ceil($avgWeeklySales + $stdDev);
+
+            // Analisis pola penjualan
+            $salesPattern = 'Stabil';
+            $patternDescription = '';
+            
+            if ($stdDev > 0) {
+                $cv = ($stdDev / $avgWeeklySales) * 100; // Coefficient of Variation
+                
+                if ($cv < 20) {
+                    $salesPattern = 'Stabil';
+                    $patternDescription = 'Permintaan relatif stabil dengan variasi rendah';
+                } elseif ($cv < 50) {
+                    $salesPattern = 'Moderat';
+                    $patternDescription = 'Permintaan cukup stabil dengan variasi sedang';
+                } else {
+                    $salesPattern = 'Tidak Stabil';
+                    $patternDescription = 'Permintaan sangat bervariasi';
+                }
+            }
+
+            // Status stok
+            $stockStatus = 'Aman';
+            $statusDescription = '';
+            $needsReorder = false;
+            
+            if ($product->stok <= $reorderPoint) {
+                $stockStatus = 'Perlu Reorder';
+                $statusDescription = "Stok saat ini ({$product->stok} {$product->unit->nama_satuan}) sudah mencapai titik pemesanan ulang ({$reorderPoint} {$product->unit->nama_satuan})";
+                $needsReorder = true;
+                
+                // Buat notifikasi jika perlu reorder
+                $this->createReorderNotification($product, $reorderPoint, $eoq);
+            } elseif ($product->stok <= $safetyStock) {
+                $stockStatus = 'Rendah';
+                $statusDescription = "Stok saat ini ({$product->stok} {$product->unit->nama_satuan}) sudah mendekati safety stock ({$safetyStock} {$product->unit->nama_satuan})";
             }
 
             $product->forecast = [
@@ -217,8 +264,13 @@ class StockController extends Controller
                 'safety_stock' => $safetyStock,
                 'reorder_point' => $reorderPoint,
                 'eoq' => $eoq,
-                'trend' => $trend,
-                'next_week_forecast' => $avgWeeklySales + $trend
+                'trend' => 0,
+                'next_week_forecast' => $nextWeekForecast,
+                'sales_pattern' => $salesPattern,
+                'pattern_description' => $patternDescription,
+                'stock_status' => $stockStatus,
+                'status_description' => $statusDescription,
+                'needs_reorder' => $needsReorder
             ];
         }
 
@@ -227,6 +279,32 @@ class StockController extends Controller
         }
 
         return view('Admin.stocks.forecast', compact('products', 'categories'));
+    }
+
+    private function createReorderNotification($product, $reorderPoint, $eoq)
+    {
+        // Cek apakah sudah ada notifikasi yang sama dalam 24 jam terakhir
+        $existingNotification = Notification::where('jenis', 'stock_alert')
+            ->where('detail->produk_id', $product->id)
+            ->where('created_at', '>=', now()->subHours(24))
+            ->first();
+
+        if (!$existingNotification) {
+            Notification::create([
+                'user_id' => Auth::id(),
+                'judul' => 'Perlu Reorder Stok',
+                'pesan' => "Stok {$product->nama} saat ini ({$product->stok} {$product->unit->nama_satuan}) sudah mencapai titik pemesanan ulang ({$reorderPoint} {$product->unit->nama_satuan}). Disarankan untuk melakukan pembelian sebesar {$eoq} {$product->unit->nama_satuan}.",
+                'jenis' => 'stock_alert',
+                'detail' => [
+                    'produk_id' => $product->id,
+                    'stok_saat_ini' => $product->stok,
+                    'reorder_point' => $reorderPoint,
+                    'eoq' => $eoq,
+                    'unit' => $product->unit->nama_satuan
+                ],
+                'link' => route('admin.stocks.forecast', $product->id)
+            ]);
+        }
     }
 
     public function generateBarcode($id)

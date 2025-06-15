@@ -10,11 +10,11 @@
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 py-6">
         <div class="flex justify-start">
-            <a href="{{ route('admin.purchases.create') }}"
+        <a href="{{ route('admin.purchases.create') }}"
                 class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg flex items-center gap-2">
                 <i class="fas fa-plus"></i>
                 <span>Tambah Pembelian</span>
-            </a>
+        </a>
         </div>
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
             <div class="p-6">
@@ -83,16 +83,16 @@
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                         <span class="font-semibold text-purple-600">
-                                            Rp {{ number_format($purchase->total_amount, 0, ',', '.') }}
+                                        Rp {{ number_format($purchase->total_amount, 0, ',', '.') }}
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap">
                                         <span
                                             class="px-3 py-1 text-xs font-semibold rounded-full
-                                            @if ($purchase->status_pembelian == 'pending') bg-yellow-100 text-yellow-800
-                                            @elseif($purchase->status_pembelian == 'approved') bg-green-100 text-green-800
-                                            @elseif($purchase->status_pembelian == 'rejected') bg-red-100 text-red-800
-                                            @elseif($purchase->status_pembelian == 'received') bg-blue-100 text-blue-800 @endif">
+                                                @if ($purchase->status_pembelian == 'pending') bg-yellow-100 text-yellow-800
+                                                @elseif($purchase->status_pembelian == 'approved') bg-green-100 text-green-800
+                                                @elseif($purchase->status_pembelian == 'rejected') bg-red-100 text-red-800
+                                                @elseif($purchase->status_pembelian == 'received') bg-blue-100 text-blue-800 @endif">
                                             {{ ucfirst($purchase->status_pembelian) }}
                                         </span>
                                     </td>
@@ -127,7 +127,7 @@
                                                         title="Reject"
                                                         onclick="return confirm('Apakah Anda yakin ingin menolak pembelian ini?')">
                                                         <i class="fas fa-times"></i>
-                                                    </button>
+                                                </button>
                                                 </form>
                                             @endif
                                             @if ($purchase->status_pembelian == 'approved')
