@@ -13,226 +13,156 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Log;
+use App\Models\RawMaterial;
+use Illuminate\Support\Str;
 
 class PurchaseController extends Controller
 {
     public function index()
     {
-        $purchases = Purchase::with(['supplier', 'details.product', 'createdBy'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-
-        return view('admin.purchases.index', compact('purchases'));
+        $purchases = Purchase::with(['supplier', 'details.rawMaterial'])->paginate(10);
+        return view('Admin.purchases.index', compact('purchases'));
     }
 
     public function create()
     {
         $suppliers = Supplier::all();
-        $products = Product::all();
-        return view('admin.purchases.create', compact('suppliers', 'products'));
+        $rawMaterials = RawMaterial::all();
+        return view('Admin.purchases.create', compact('suppliers', 'rawMaterials'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'pemasok_id' => 'required|exists:suppliers,id',
+            'supplier_id' => 'required|exists:suppliers,id',
             'tanggal_pembelian' => 'required|date',
-            'catatan' => 'nullable|string',
-            'products' => 'required|array|min:1',
-            'products.*.produk_id' => 'required|exists:products,id',
-            'products.*.jumlah' => 'required|integer|min:1',
-            'products.*.harga_satuan' => 'required|numeric|min:0',
+            'produk' => 'required|array|min:1',
+            'produk.*.raw_material_id' => 'required|exists:raw_materials,id',
+            'produk.*.jumlah' => 'required|numeric|min:1',
+            'produk.*.harga' => 'required|numeric|min:0',
         ]);
-        
+
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
+            $purchaseModel = new Purchase();
+            $nomorPembelian = $purchaseModel->generateInvoiceNumber();
+            $purchase = Purchase::create([
+                'pemasok_id' => $request->supplier_id,
+                'tanggal_pembelian' => $request->tanggal_pembelian,
+                'nomor_pembelian' => $nomorPembelian,
+                'total_amount' => 0,
+                'status_pembelian' => 'pending',
+                'catatan' => $request->catatan,
+                'dibuat_oleh' => Auth::id(),
+            ]);
 
-            $purchase = new Purchase();
-            $purchase->pemasok_id = $request->pemasok_id;
-            $purchase->tanggal_pembelian = $request->tanggal_pembelian;
-            $purchase->nomor_pembelian = $purchase->generateInvoiceNumber();
-            $purchase->catatan = $request->catatan;
-            $purchase->status_pembelian = 'pending';
-            $purchase->total_amount = 0;
-            $purchase->dibuat_oleh = Auth::id();
-            $purchase->save();
-
-            $total = 0;
-            foreach ($request->products as $product) {
-                $subtotal = $product['jumlah'] * $product['harga_satuan'];
-                $total += $subtotal;
-
+            $totalAmount = 0;
+            foreach ($request->produk as $produk) {
+                $rawMaterial = RawMaterial::findOrFail($produk['raw_material_id']);
+                $total = $produk['jumlah'] * $produk['harga'];
+                $totalAmount += $total;
                 PurchaseDetail::create([
                     'pembelian_id' => $purchase->id,
-                    'produk_id' => $product['produk_id'],
-                    'jumlah' => $product['jumlah'],
-                    'harga_satuan' => $product['harga_satuan'],
-                    'total' => $subtotal,
-                    'catatan' => $product['catatan'] ?? null
+                    'raw_material_id' => $rawMaterial->id,
+                    'nama' => $rawMaterial->nama,
+                    'jumlah' => $produk['jumlah'],
+                    'harga' => $produk['harga'],
+                    'total' => $total,
+                    'catatan' => $request->catatan ?? null,
                 ]);
             }
-
-            $purchase->total_amount = $total;
-            $purchase->save();
-
+            $purchase->update(['total_amount' => $totalAmount]);
             DB::commit();
-
-            return redirect()->route('admin.purchases.index')
-                ->with('success', 'Pembelian berhasil dibuat.');
+            return redirect()->route('admin.purchases.index')->with('success', 'Pembelian berhasil ditambahkan.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()
-                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
-                ->withInput();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
-    public function show(Purchase $purchase)
+    public function edit($id)
     {
-        $purchase->load(['supplier', 'details.product', 'createdBy', 'approvedBy', 'rejectedBy', 'receivedBy']);
-        return view('admin.purchases.show', compact('purchase'));
-    }
-
-    public function edit(Purchase $purchase)
-    {
-        // Cek apakah pembelian masih bisa diedit
-        if ($purchase->status_pembelian !== 'pending') {
-            return redirect()->route('admin.purchases.index')
-                ->with('error', 'Pembelian ini tidak dapat diedit karena statusnya bukan pending.');
+        $purchase = Purchase::with(['details.rawMaterial', 'supplier'])->findOrFail($id);
+        if (in_array($purchase->status_pembelian, ['approved', 'received'])) {
+            return redirect()->route('admin.purchases.index')->with('error', 'Pembelian dengan status approved atau received tidak dapat diedit.');
         }
-
         $suppliers = Supplier::all();
-        $products = Product::with('unit')->get();
-
-        return view('Admin.purchases.edit', compact('purchase', 'suppliers', 'products'));
+        $rawMaterials = RawMaterial::all();
+        return view('Admin.purchases.edit', compact('purchase', 'suppliers', 'rawMaterials'));
     }
 
-    public function update(Request $request, Purchase $purchase)
+    public function update(Request $request, $id)
     {
-        try {
-            Log::info('Memulai proses update pembelian', [
-                'purchase_id' => $purchase->id,
-                'request_data' => $request->all()
-            ]);
-
-            // Validasi request
         $request->validate([
-            'pemasok_id' => 'required|exists:suppliers,id',
+            'supplier_id' => 'required|exists:suppliers,id',
             'tanggal_pembelian' => 'required|date',
-                'status_pembelian' => 'required|in:pending,approved,rejected,received',
-                'items' => 'required|array|min:1',
-                'items.*.produk_id' => 'required|exists:products,id',
-                'items.*.jumlah' => 'required|numeric|min:1',
-                'items.*.harga_satuan' => 'required|numeric|min:0',
-                'items.*.total' => 'required|numeric|min:0',
-                'items.*.catatan' => 'nullable|string|max:255',
-                'total' => 'required|numeric|min:0',
-                'alasan_penolakan' => 'required_if:status_pembelian,rejected|nullable|string|max:255'
+            'produk' => 'required|array|min:1',
+            'produk.*.raw_material_id' => 'required|exists:raw_materials,id',
+            'produk.*.jumlah' => 'required|numeric|min:1',
+            'produk.*.harga' => 'required|numeric|min:0',
+            'catatan' => 'nullable|string',
+            'status_pembelian' => 'required|in:pending,approved,rejected,received',
         ]);
 
-            // Cek apakah pembelian masih bisa diedit
-            if ($purchase->status_pembelian !== 'pending') {
-                return redirect()->route('admin.purchases.index')
-                    ->with('error', 'Pembelian ini tidak dapat diedit karena statusnya bukan pending.');
-            }
+        DB::beginTransaction();
+        try {
+            $purchase = Purchase::findOrFail($id);
+            $oldStatus = $purchase->status_pembelian;
 
-            DB::beginTransaction();
-            Log::info('Memulai transaksi database');
-
-            // Update data pembelian
-            $updateResult = $purchase->update([
-                'pemasok_id' => $request->pemasok_id,
+            // Update data purchase
+            $purchase->update([
+                'pemasok_id' => $request->supplier_id,
                 'tanggal_pembelian' => $request->tanggal_pembelian,
+                'catatan' => $request->catatan,
                 'status_pembelian' => $request->status_pembelian,
-                'total' => $request->total,
-                'dibuat_oleh' => Auth::id()
+                'dibuat_oleh' => Auth::id(),
             ]);
 
-            if (!$updateResult) {
-                throw new \Exception('Gagal mengupdate data pembelian');
+            // Hapus semua detail lama
+            PurchaseDetail::where('pembelian_id', $purchase->id)->delete();
+
+            // Insert detail baru
+            $totalAmount = 0;
+            foreach ($request->produk as $produk) {
+                $rawMaterial = RawMaterial::findOrFail($produk['raw_material_id']);
+                $total = $produk['jumlah'] * $produk['harga'];
+                $totalAmount += $total;
+                PurchaseDetail::create([
+                    'pembelian_id' => $purchase->id,
+                    'raw_material_id' => $rawMaterial->id,
+                    'nama' => $rawMaterial->nama,
+                    'jumlah' => $produk['jumlah'],
+                    'harga' => $produk['harga'],
+                    'total' => $total,
+                    'catatan' => $request->catatan ?? null,
+                ]);
             }
 
-            Log::info('Data pembelian berhasil diupdate', [
-                'purchase_id' => $purchase->id,
-                'new_status' => $request->status_pembelian
-            ]);
+            // Update total amount
+            $purchase->update(['total_amount' => $totalAmount]);
 
-            // Hapus detail pembelian lama
-            $purchase->details()->delete();
-            Log::info('Detail pembelian lama berhasil dihapus');
-
-            // Buat detail pembelian baru
-            foreach ($request->items as $item) {
-                $detail = $purchase->details()->create([
-                    'produk_id' => $item['produk_id'],
-                    'jumlah' => $item['jumlah'],
-                    'harga_satuan' => $item['harga_satuan'],
-                    'total' => $item['total'],
-                    'catatan' => $item['catatan'] ?? null
-                ]);
-
-                if (!$detail) {
-                    throw new \Exception('Gagal membuat detail pembelian');
+            // Jika status berubah menjadi received, update stok
+            if ($request->status_pembelian === 'received' && $oldStatus !== 'received') {
+                foreach ($request->produk as $produk) {
+                    $rawMaterial = RawMaterial::findOrFail($produk['raw_material_id']);
+                    $rawMaterial->update([
+                        'stok' => $rawMaterial->stok + $produk['jumlah']
+                    ]);
                 }
             }
 
-            Log::info('Detail pembelian baru berhasil dibuat', [
-                'purchase_id' => $purchase->id,
-                'item_count' => count($request->items)
-            ]);
-
-            // Jika status rejected, update alasan penolakan
-            if ($request->status_pembelian === 'rejected') {
-                $purchase->update([
-                    'alasan_penolakan' => $request->alasan_penolakan,
-                    'ditolak_oleh' => Auth::id(),
-                    'ditolak_pada' => now()
-                ]);
-                Log::info('Status pembelian diupdate ke rejected', [
-                    'purchase_id' => $purchase->id,
-                    'alasan' => $request->alasan_penolakan
-                ]);
-            }
-
             DB::commit();
-            Log::info('Transaksi berhasil diselesaikan', ['purchase_id' => $purchase->id]);
-
-            return redirect()->route('admin.purchases.index')
-                ->with('success', 'Pembelian berhasil diperbarui.');
-
+            return redirect()->route('admin.purchases.index')->with('success', 'Pembelian berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error dalam proses update pembelian', [
-                'purchase_id' => $purchase->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'Terjadi kesalahan saat memperbarui pembelian. Silakan coba lagi.');
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
     public function destroy(Purchase $purchase)
     {
-        if ($purchase->status_pembelian !== 'pending') {
-            return redirect()->route('admin.purchases.show', $purchase)
-                ->with('error', 'Pembelian yang sudah disetujui tidak dapat dihapus');
-        }
-
-        try {
-            DB::beginTransaction();
-            $purchase->details()->delete();
-            $purchase->delete();
-            DB::commit();
-
-            return redirect()->route('admin.purchases.index')
-                ->with('success', 'Pembelian berhasil dihapus');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
-        }
+        $purchase->delete();
+        return redirect()->route('admin.purchases.index')->with('success', 'Pembelian berhasil dihapus.');
     }
 
     public function approve(Purchase $purchase)
@@ -251,7 +181,7 @@ class PurchaseController extends Controller
                 ]);
                 return redirect()->route('admin.purchases.index')
                     ->with('error', 'Pembelian ini tidak dapat disetujui karena statusnya bukan pending.');
-        }
+            }
 
             DB::beginTransaction();
             Log::info('Memulai transaksi database');
@@ -259,10 +189,8 @@ class PurchaseController extends Controller
             try {
                 // Update status pembelian
                 $updateResult = $purchase->update([
-                'status_pembelian' => 'approved',
-                'disetujui_oleh' => Auth::id(),
-                'disetujui_pada' => now()
-            ]);
+                    'status_pembelian' => 'approved',
+                ]);
 
                 if (!$updateResult) {
                     throw new \Exception('Gagal mengupdate status pembelian');
@@ -296,12 +224,11 @@ class PurchaseController extends Controller
                     ]);
                 }
 
-            DB::commit();
+                DB::commit();
                 Log::info('Transaksi berhasil diselesaikan', ['purchase_id' => $purchase->id]);
 
                 return redirect()->route('admin.purchases.index')
                     ->with('success', 'Pembelian berhasil disetujui.');
-
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::error('Error dalam transaksi database', [
@@ -311,14 +238,13 @@ class PurchaseController extends Controller
                 ]);
                 throw $e;
             }
-
         } catch (\Exception $e) {
             Log::error('Error dalam proses persetujuan pembelian', [
                 'purchase_id' => $purchase->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return redirect()->route('admin.purchases.index')
                 ->with('error', 'Terjadi kesalahan saat menyetujui pembelian: ' . $e->getMessage());
         }
@@ -332,10 +258,6 @@ class PurchaseController extends Controller
                 'user_id' => Auth::id(),
                 'request_data' => $request->all()
             ]);
-
-        $request->validate([
-                'alasan_penolakan' => 'required|string|max:255'
-        ]);
 
             // Cek apakah pembelian masih pending
             if ($purchase->status_pembelian !== 'pending') {
@@ -353,11 +275,8 @@ class PurchaseController extends Controller
             try {
                 // Update status pembelian
                 $updateResult = $purchase->update([
-                'status_pembelian' => 'rejected',
-                'ditolak_oleh' => Auth::id(),
-                'ditolak_pada' => now(),
-                'alasan_penolakan' => $request->alasan_penolakan
-            ]);
+                    'status_pembelian' => 'rejected',
+                ]);
 
                 if (!$updateResult) {
                     throw new \Exception('Gagal mengupdate status pembelian');
@@ -373,185 +292,13 @@ class PurchaseController extends Controller
                     $notification = Notification::create([
                         'user_id' => Auth::id(),
                         'judul' => 'Pembelian Ditolak',
-                        'pesan' => "Pembelian #{$purchase->nomor_pembelian} dari {$purchase->supplier->nama_supplier} telah ditolak oleh " . Auth::user()->name . ". Alasan: " . $request->alasan_penolakan,
+                        'pesan' => "Pembelian #{$purchase->nomor_pembelian} dari {$purchase->supplier->nama_supplier} telah ditolak oleh " . Auth::user()->nama,
                         'jenis' => 'purchase_rejected',
                         'dibaca' => false,
                         'detail' => [
                             'purchase_id' => $purchase->id,
                             'nomor_pembelian' => $purchase->nomor_pembelian,
                             'supplier' => $purchase->supplier->nama_supplier,
-                            'alasan_penolakan' => $request->alasan_penolakan
-                        ],
-                        'link' => route('admin.purchases.show', $purchase->id)
-                    ]);
-                    Log::info('Notifikasi berhasil dibuat', ['notification_id' => $notification->id]);
-                } catch (\Exception $e) {
-                    Log::warning('Gagal membuat notifikasi', [
-                        'error' => $e->getMessage(),
-                        'purchase_id' => $purchase->id
-                    ]);
-                }
-
-            DB::commit();
-                Log::info('Transaksi berhasil diselesaikan', ['purchase_id' => $purchase->id]);
-
-                return redirect()->route('admin.purchases.index')
-                    ->with('success', 'Pembelian berhasil ditolak.');
-
-            } catch (\Exception $e) {
-                DB::rollBack();
-                Log::error('Error dalam transaksi database', [
-                    'purchase_id' => $purchase->id,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                throw $e;
-            }
-
-        } catch (\Exception $e) {
-            Log::error('Error dalam proses penolakan pembelian', [
-                'purchase_id' => $purchase->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return redirect()->route('admin.purchases.index')
-                ->with('error', 'Terjadi kesalahan saat menolak pembelian: ' . $e->getMessage());
-        }
-    }
-
-    public function receive(Purchase $purchase)
-    {
-        try {
-            Log::info('Memulai proses penerimaan barang', [
-                'purchase_id' => $purchase->id,
-                'user_id' => Auth::id()
-            ]);
-
-            // Cek apakah pembelian sudah disetujui
-            if ($purchase->status_pembelian !== 'approved') {
-                Log::warning('Status pembelian tidak valid untuk diterima', [
-                    'purchase_id' => $purchase->id,
-                    'current_status' => $purchase->status_pembelian
-                ]);
-                return redirect()->route('admin.purchases.index')
-                    ->with('error', 'Pembelian ini tidak dapat diterima karena statusnya bukan approved.');
-        }
-
-            DB::beginTransaction();
-            Log::info('Memulai transaksi database');
-
-            try {
-            // Update status pembelian
-                $updateResult = $purchase->update([
-                'status_pembelian' => 'received',
-                'diterima_oleh' => Auth::id(),
-                'diterima_pada' => now()
-            ]);
-
-                if (!$updateResult) {
-                    throw new \Exception('Gagal mengupdate status pembelian');
-                }
-
-                Log::info('Status pembelian berhasil diupdate', [
-                    'purchase_id' => $purchase->id,
-                    'new_status' => 'received'
-                ]);
-
-            // Update stok produk
-            foreach ($purchase->details as $detail) {
-                    try {
-                $product = $detail->product;
-                        if (!$product) {
-                            throw new \Exception("Produk dengan ID {$detail->produk_id} tidak ditemukan");
-                        }
-
-                $oldStock = $product->stok;
-                $newStock = $oldStock + $detail->jumlah;
-
-                        Log::info('Mengupdate stok produk', [
-                            'product_id' => $product->id,
-                            'product_name' => $product->nama_produk,
-                            'old_stock' => $oldStock,
-                            'new_stock' => $newStock,
-                            'quantity' => $detail->jumlah
-                        ]);
-
-                        $updateStock = $product->update([
-                            'stok' => $newStock
-                        ]);
-
-                        if (!$updateStock) {
-                            throw new \Exception("Gagal mengupdate stok produk {$product->nama_produk}");
-                        }
-
-                        // Catat history stok
-                        $stockHistory = StockHistory::create([
-                    'produk_id' => $product->id,
-                            'jenis_perubahan' => 'masuk',
-                    'jumlah' => $detail->jumlah,
-                            'stok_lama' => $oldStock,
-                            'stok_baru' => $newStock,
-                            'keterangan' => "Penerimaan barang dari pembelian #{$purchase->nomor_pembelian}",
-                    'dibuat_oleh' => Auth::id()
-                ]);
-
-                        if (!$stockHistory) {
-                            throw new \Exception("Gagal mencatat history stok untuk produk {$product->nama_produk}");
-                        }
-
-                        // Buat notifikasi untuk perubahan stok
-                        try {
-                            $notification = Notification::create([
-                                'user_id' => Auth::id(),
-                                'judul' => 'Stok Produk Diperbarui',
-                                'pesan' => "Stok produk {$product->nama_produk} diperbarui: {$oldStock} → {$newStock} (Penambahan: {$detail->jumlah})",
-                                'jenis' => 'stock_updated',
-                                'dibaca' => false,
-                                'detail' => [
-                                    'product_id' => $product->id,
-                                    'product_name' => $product->nama_produk,
-                                    'old_stock' => $oldStock,
-                                    'new_stock' => $newStock,
-                                    'quantity' => $detail->jumlah
-                                ],
-                                'link' => route('admin.products.show', $product->id)
-                            ]);
-                            Log::info('Notifikasi stok berhasil dibuat', ['notification_id' => $notification->id]);
-                        } catch (\Exception $e) {
-                            Log::warning('Gagal membuat notifikasi stok', [
-                                'error' => $e->getMessage(),
-                                'product_id' => $product->id
-                            ]);
-                        }
-
-                        Log::info('Stok produk berhasil diupdate', [
-                            'product_id' => $product->id,
-                            'product_name' => $product->nama_produk,
-                            'old_stock' => $oldStock,
-                            'new_stock' => $newStock
-                        ]);
-                    } catch (\Exception $e) {
-                        Log::error('Error saat mengupdate stok produk', [
-                            'product_id' => $detail->produk_id,
-                            'error' => $e->getMessage()
-                        ]);
-                        throw $e;
-                    }
-                }
-
-                // Buat notifikasi untuk penerimaan barang
-                try {
-                    $notification = Notification::create([
-                        'user_id' => Auth::id(),
-                        'judul' => 'Barang Diterima',
-                        'pesan' => "Barang dari pembelian #{$purchase->nomor_pembelian} dari {$purchase->supplier->nama_supplier} telah diterima oleh " . Auth::user()->name,
-                        'jenis' => 'purchase_received',
-                        'dibaca' => false,
-                        'detail' => [
-                            'purchase_id' => $purchase->id,
-                            'nomor_pembelian' => $purchase->nomor_pembelian,
-                            'supplier' => $purchase->supplier->nama_supplier
                         ],
                         'link' => route('admin.purchases.show', $purchase->id)
                     ]);
@@ -567,8 +314,7 @@ class PurchaseController extends Controller
                 Log::info('Transaksi berhasil diselesaikan', ['purchase_id' => $purchase->id]);
 
                 return redirect()->route('admin.purchases.index')
-                    ->with('success', 'Barang berhasil diterima dan stok telah diperbarui.');
-
+                    ->with('success', 'Pembelian berhasil ditolak.');
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::error('Error dalam transaksi database', [
@@ -578,16 +324,52 @@ class PurchaseController extends Controller
                 ]);
                 throw $e;
             }
-
         } catch (\Exception $e) {
-            Log::error('Error dalam proses penerimaan barang', [
+            Log::error('Error dalam proses penolakan pembelian', [
                 'purchase_id' => $purchase->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return redirect()->route('admin.purchases.index')
-                ->with('error', 'Terjadi kesalahan saat menerima barang: ' . $e->getMessage());
+                ->with('error', 'Terjadi kesalahan saat menolak pembelian: ' . $e->getMessage());
         }
     }
-} 
+
+    public function receive($id)
+    {
+        DB::beginTransaction();
+        try {
+            $purchase = Purchase::with('details')->findOrFail($id);
+            
+            if ($purchase->status_pembelian !== 'approved') {
+                return back()->with('error', 'Hanya pembelian yang sudah disetujui yang dapat diterima.');
+            }
+
+            // Update status pembelian
+            $purchase->update([
+                'status_pembelian' => 'received',
+            ]);
+
+            // Update stok bahan baku
+            foreach ($purchase->details as $detail) {
+                $rawMaterial = RawMaterial::findOrFail($detail->raw_material_id);
+                $rawMaterial->update([
+                    'stok' => $rawMaterial->stok + $detail->jumlah
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->route('admin.purchases.index')->with('success', 'Pembelian berhasil diterima dan stok telah diperbarui.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function show($id)
+    {
+        $purchase = Purchase::with(['details.rawMaterial', 'supplier'])->findOrFail($id);
+        return view('Admin.purchases.show', compact('purchase'));
+    }
+}

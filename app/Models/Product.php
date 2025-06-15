@@ -10,7 +10,6 @@ class Product extends Model
         'nama_produk',
         'kategori_id',
         'kode_produk',
-        'harga_beli',
         'harga_jual',
         'stok',
         'unit_id',

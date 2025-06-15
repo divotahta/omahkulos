@@ -76,7 +76,6 @@
                                 <th class="p-2">Nama Produk</th>
                                 <th class="p-2">Kategori</th>
                                 <th class="p-2">Satuan</th>
-                                <th class="p-2">Harga Beli</th>
                                 <th class="p-2">Harga Jual</th>
                                 <th class="p-2">Stok</th>
                                 <th class="p-2">Status</th>
@@ -100,7 +99,6 @@
                                     <td class="p-2">{{ $product->nama_produk }}</td>
                                     <td class="p-2">{{ $product->category->nama_kategori }}</td>
                                     <td class="p-2">{{ $product->unit->nama_satuan }}</td>
-                                    <td class="p-2">Rp {{ number_format($product->harga_beli, 0, ',', '.') }}
                                     </td>
                                     <td class="p-2">Rp {{ number_format($product->harga_jual, 0, ',', '.') }}
                                     </td>

@@ -38,78 +38,8 @@ class PurchaseController extends Controller
 
     public function show(Purchase $purchase)
     {
-        $purchase->load(['supplier', 'details.product', 'approvalHistory']);
+        $purchase->load(['supplier', 'details.product']);
         return view('owner.purchases.show', compact('purchase'));
     }
 
-    public function approve(Purchase $purchase)
-    {
-        if ($purchase->status !== 'pending') {
-            return redirect()->back()->with('error', 'Pembelian ini tidak dapat disetujui.');
-        }
-
-        DB::beginTransaction();
-        try {
-            // Update status pembelian
-            $purchase->update([
-                'status' => 'approved',
-                'approved_at' => now(),
-                'approved_by' => auth()->id()
-            ]);
-
-            // Catat history persetujuan
-            $purchase->approvalHistory()->create([
-                'status' => 'approved',
-                'notes' => 'Pembelian disetujui',
-                'created_by' => auth()->id()
-            ]);
-
-            // Kirim notifikasi email ke admin
-            Mail::to($purchase->createdBy->email)->send(new PurchaseApprovalNotification($purchase, 'approved'));
-
-            DB::commit();
-            return redirect()->route('owner.purchases.index')->with('success', 'Pembelian berhasil disetujui.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyetujui pembelian.');
-        }
-    }
-
-    public function reject(Request $request, Purchase $purchase)
-    {
-        if ($purchase->status !== 'pending') {
-            return redirect()->back()->with('error', 'Pembelian ini tidak dapat ditolak.');
-        }
-
-        $request->validate([
-            'rejection_reason' => 'required|string|max:255'
-        ]);
-
-        DB::beginTransaction();
-        try {
-            // Update status pembelian
-            $purchase->update([
-                'status' => 'rejected',
-                'rejected_at' => now(),
-                'rejected_by' => auth()->id(),
-                'rejection_reason' => $request->rejection_reason
-            ]);
-
-            // Catat history penolakan
-            $purchase->approvalHistory()->create([
-                'status' => 'rejected',
-                'notes' => $request->rejection_reason,
-                'created_by' => auth()->id()
-            ]);
-
-            // Kirim notifikasi email ke admin
-            Mail::to($purchase->createdBy->email)->send(new PurchaseApprovalNotification($purchase, 'rejected'));
-
-            DB::commit();
-            return redirect()->route('owner.purchases.index')->with('success', 'Pembelian berhasil ditolak.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat menolak pembelian.');
-        }
-    }
 } 

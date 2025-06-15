@@ -13,8 +13,7 @@ return new class extends Migration
             $table->string('nama_produk');
             $table->foreignId('kategori_id')->constrained('categories')->onDelete('cascade');
             $table->string('kode_produk')->unique();
-            $table->decimal('harga_beli', 10, 2);
-            $table->decimal('harga_jual', 10, 2);
+            $table->decimal('harga_jual', 10, 2)->nullable();
             $table->integer('stok');
             $table->foreignId('unit_id')->constrained('units')->onDelete('cascade');
             $table->string('gambar_produk')->nullable();

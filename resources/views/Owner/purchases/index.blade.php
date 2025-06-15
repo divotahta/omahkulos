@@ -158,11 +158,7 @@
                                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
                                     Alasan Penolakan
                                 </h3>
-                                <div class="mt-2">
-                                    <textarea name="rejection_reason" rows="4" required
-                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                        placeholder="Masukkan alasan penolakan..."></textarea>
-                                </div>
+                                
                             </div>
                         </div>
                     </div>

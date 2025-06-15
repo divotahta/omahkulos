@@ -29,6 +29,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\EoqCalculatorController;
 use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\RawMaterialController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -198,6 +199,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-as-read');
     Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
     Route::get('/admin/notifications', [NotificationController::class, 'getNotifications'])->name('admin.notifications');
+
+    Route::resource('raw-materials', RawMaterialController::class);
+    Route::post('raw-materials/{bahanBaku}/update-stok', [RawMaterialController::class, 'updateStok'])->name('bahan-baku.update-stok');
 });
 
 // Owner Routes

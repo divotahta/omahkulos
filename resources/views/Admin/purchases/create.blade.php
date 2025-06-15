@@ -1,272 +1,316 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Tambah Pembelian Baru
+            {{ __('Tambah Pembelian Bahan Baku') }}
         </h2>
-
-        </div>
     </x-slot>
 
-
+    <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <a href="{{ route('admin.purchases.index') }}"
-            class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400">
-            <i class="fas fa-arrow-left mr-2"></i> Kembali
-        </a>
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-4">
+            <a href="{{ route('admin.purchases.index') }}"
+                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Kembali
+            </a>
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
                     <form action="{{ route('admin.purchases.store') }}" method="POST" id="purchaseForm">
                         @csrf
-                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                <div>
-                            <label for="pemasok_id" class="block text-sm font-medium text-gray-700">Supplier</label>
-                            <select name="pemasok_id" id="pemasok_id"
-                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md @error('pemasok_id') border-red-300 @enderror"
+                        <div class="mb-4">
+                            <label for="supplier_id" class="block text-sm font-medium text-gray-700">Supplier</label>
+                            <select name="supplier_id" id="supplier_id"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                 required>
-                                        <option value="">Pilih Supplier</option>
+                                <option value="">Pilih Supplier</option>
                                 @foreach ($suppliers as $supplier)
-                                    <option value="{{ $supplier->id }}"
-                                        {{ old('pemasok_id') == $supplier->id ? 'selected' : '' }}>
-                                                {{ $supplier->nama }} - {{ $supplier->nama_toko }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                            @error('pemasok_id')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
+                                    <option value="{{ $supplier->id }}">{{ $supplier->nama }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-4">
                             <label for="tanggal_pembelian" class="block text-sm font-medium text-gray-700">Tanggal
                                 Pembelian</label>
                             <input type="date" name="tanggal_pembelian" id="tanggal_pembelian"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @error('tanggal_pembelian') border-red-300 @enderror"
-                                value="{{ old('tanggal_pembelian', date('Y-m-d')) }}" required>
-                                    @error('tanggal_pembelian')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            </div>
-
-                    <div class="mt-6">
-                        <label for="catatan" class="block text-sm font-medium text-gray-700">Catatan</label>
-                        <textarea name="catatan" id="catatan" rows="3"
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @error('catatan') border-red-300 @enderror">{{ old('catatan') }}</textarea>
-                        @error('catatan')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                required>
                         </div>
-
-                    <div class="mt-6">
-                            <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-medium text-gray-900">Detail Produk</h3>
-                            <button type="button" id="addRow"
-                                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                <i class="fas fa-plus mr-2"></i> Tambah Produk
-                                </button>
-                            </div>
-
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Produk</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Jumlah</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Harga Satuan</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Total</th>
-                                        <th scope="col"
-                                            class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Aksi</th>
-                                        </tr>
-                                    </thead>
-                                <tbody id="productTable" class="bg-white divide-y divide-gray-200">
+                        <div class="mb-4">
+                            <label for="catatan" class="block text-sm font-medium text-gray-700">Catatan</label>
+                            <textarea name="catatan" id="catatan" rows="2"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <h3 class="text-lg font-semibold mb-2">Detail Produk</h3>
+                            <table class="min-w-full mb-2">
+                                <thead>
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <select name="products[0][produk_id]"
-                                                class="product-select block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Produk</th>
+                                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Jumlah</th>
+                                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Harga Satuan</th>
+                                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Total</th>
+                                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Expired Date</th>
+                                        <th class="px-2 py-1"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="produk-table">
+                                    <tr>
+                                        <td class="px-2 py-1">
+                                            <select name="produk[0][raw_material_id]"
+                                                class="raw-material-select mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                 required>
-                                                <option value="">Pilih Produk</option>
-                                                @foreach ($products as $product)
-                                                    <option value="{{ $product->id }}"
-                                                        data-price="{{ $product->harga_beli }}">
-                                                        {{ $product->nama_produk }} ({{ $product->kode_produk }})
-                                                    </option>
+                                                <option value="">Pilih Bahan</option>
+                                                @foreach ($rawMaterials as $rawMaterial)
+                                                    <option value="{{ $rawMaterial->id }}"
+                                                        data-harga="{{ $rawMaterial->harga }}"
+                                                        data-expired="{{ \Carbon\Carbon::parse($rawMaterial->expired_date)->format('Y-m-d') }}">
+                                                        {{ $rawMaterial->nama }} ({{ $rawMaterial->kode }})</option>
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <input type="number" name="products[0][jumlah]"
-                                                class="quantity block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        <td class="px-2 py-1">
+                                            <input type="number" name="produk[0][jumlah]"
+                                                class="jumlah-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                 min="1" value="1" required>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <input type="number" name="products[0][harga_satuan]"
-                                                class="price block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                min="0" step="0.01" required>
+                                        <td class="px-2 py-1">
+                                            <input type="number" name="produk[0][harga]"
+                                                class="harga-input mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100"
+                                                min="0" required readonly>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td class="px-2 py-1">
                                             <input type="text"
-                                                class="subtotal block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                                readonly>
+                                                class="total-input mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100"
+                                                value="0" readonly>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button type="button" class="text-red-600 hover:text-red-900 remove-row">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                        <td class="px-2 py-1">
+                                            <input type="date" name="produk[0][expired_date]"
+                                                class="expired-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                required readonly>
+                                        </td>
+                                        <td class="px-2 py-1 text-center">
+                                            <button type="button" class="hapus-row text-red-600 hover:text-red-900"><i
+                                                    class="fas fa-trash"></i></button>
                                         </td>
                                     </tr>
-                                    </tbody>
-                                <tfoot>
-                                    <tr class="bg-gray-50">
-                                        <td colspan="3" class="px-6 py-4 text-right font-semibold">Total Keseluruhan:</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <input type="text" id="grandTotal" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm font-semibold" readonly>
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
-                                </table>
+                                </tbody>
+                            </table>
+                            <button type="button" id="tambah-produk"
+                                class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-1 px-3 rounded mb-2"><i
+                                    class="fas fa-plus"></i> Tambah Produk</button>
+                            <div class="text-right font-semibold mt-2">
+                                Total Keseluruhan: <input type="text" id="grand-total"
+                                    class="bg-gray-100 w-32 text-right rounded px-2" value="0.00" readonly>
                             </div>
                         </div>
-
-                    <div class="mt-6 flex justify-end">
-                        <button type="submit"
-                            class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                    Simpan
-                                </button>
+                        <div class="flex items-center justify-end mt-4">
+                            <button type="submit"
+                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                Simpan
+                            </button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+    {{-- <script>
+        let rowIdx = 1;
+        const rawMaterialCodes = [
+            @foreach ($rawMaterials as $rm)
+                '{{ $rm->kode }}',
+            @endforeach
+        ];
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            let rowCount = 1;
+        function hitungTotalRow(row) {
+            const jumlah = parseFloat(row.querySelector('.jumlah-input').value) || 0;
+            const harga = parseFloat(row.querySelector('.harga-input').value) || 0;
+            row.querySelector('.total-input').value = (jumlah * harga).toFixed(2);
+            console.log(`Hitung: ${jumlah} x ${harga} = ${jumlah * harga}`);
 
-            // Fungsi untuk menghitung subtotal
-            function calculateSubtotal(row) {
-                const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
-                const price = parseFloat(row.querySelector('.price').value) || 0;
-                const subtotal = quantity * price;
-                row.querySelector('.subtotal').value = subtotal.toFixed(2);
-                calculateGrandTotal();
+        }
+
+        function hitungGrandTotal() {
+            let total = 0;
+            document.querySelectorAll('.total-input').forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            document.getElementById('grand-total').value = total.toFixed(2);
+        }
+
+        document.getElementById('produk-table').addEventListener('input', function(e) {
+            if (e.target.classList.contains('raw-material-select')) {
+                const row = e.target.closest('tr');
+                console.log('Jumlah atau harga berubah');
+
+                const hargaInput = row.querySelector('.harga-input');
+                const expiredInput = row.querySelector('.expired-input');
+                const selected = e.target.options[e.target.selectedIndex];
+                hargaInput.value = selected.getAttribute('data-harga') || '';
+                expiredInput.value = selected.getAttribute('data-expired') || '';
+                hitungTotalRow(row);
+                hitungGrandTotal();
+            }
+            // ✅ Tambahkan ini untuk jumlah dan harga
+            if (e.target.classList.contains('jumlah-input') || e.target.classList.contains('harga-input')) {
+                const row = e.target.closest('tr');
+                console.log('Jumlah atau harga berubah');
+                hitungTotalRow(row);
+                hitungGrandTotal();
             }
 
-            // Fungsi untuk menghitung total keseluruhan
-            function calculateGrandTotal() {
-                const subtotals = document.querySelectorAll('.subtotal');
-                let grandTotal = 0;
-                subtotals.forEach(subtotal => {
-                    grandTotal += parseFloat(subtotal.value) || 0;
-                });
-                document.getElementById('grandTotal').value = grandTotal.toFixed(2);
-            }
-
-            // Event handler untuk perubahan quantity dan price
-            document.addEventListener('input', function(e) {
-                if (e.target.classList.contains('quantity') || e.target.classList.contains('price')) {
-                    calculateSubtotal(e.target.closest('tr'));
-                }
-            });
-
-            // Event handler untuk pemilihan produk
-            document.addEventListener('change', function(e) {
-                if (e.target.classList.contains('product-select')) {
-                    const selectedOption = e.target.options[e.target.selectedIndex];
-                    const price = selectedOption.dataset.price;
-                    const row = e.target.closest('tr');
-                    row.querySelector('.price').value = price;
-                    calculateSubtotal(row);
-                }
-            });
-
-            // Tambah baris baru
-            document.getElementById('addRow').addEventListener('click', function() {
-                const newRow = `
-                    <tr>
-                <td class="px-6 py-4 whitespace-nowrap">
-                            <select name="products[${rowCount}][produk_id]" class="product-select block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" required>
-                        <option value="">Pilih Produk</option>
-                                @foreach ($products as $product)
-                                    <option value="{{ $product->id }}" data-price="{{ $product->harga_beli }}">
-                                        {{ $product->nama_produk }} ({{ $product->kode_produk }})
-                            </option>
-                                @endforeach
+        });
+        document.getElementById('tambah-produk').addEventListener('click', function() {
+            const tbody = document.getElementById('produk-table');
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td class="px-2 py-1">
+                    <select name="produk[${rowIdx}][raw_material_id]" class="raw-material-select mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                        <option value="">Pilih Bahan</option>
+                        @foreach ($rawMaterials as $rawMaterial)
+                            <option value="{{ $rawMaterial->id }}" data-harga="{{ $rawMaterial->harga }}" data-expired="{{ \Carbon\Carbon::parse($rawMaterial->expired_date)->format('Y-m-d') }}">{{ $rawMaterial->nama }} ({{ $rawMaterial->kode }})</option>
+                        @endforeach
                     </select>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                            <input type="number" name="products[${rowCount}][jumlah]" class="quantity block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" min="1" value="1" required>
+                <td class="px-2 py-1">
+                    <input type="number" name="produk[${rowIdx}][jumlah]" class="jumlah-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="1" value="1" required>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                            <input type="number" name="products[${rowCount}][harga_satuan]" class="price block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" min="0" step="0.01" required>
+                <td class="px-2 py-1">
+                    <input type="number" name="produk[${rowIdx}][harga]" class="harga-input mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100" min="0" required readonly>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                            <input type="text" class="subtotal block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" readonly>
+                <td class="px-2 py-1">
+                    <input type="text" class="total-input mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100" value="0" readonly>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button type="button" class="text-red-600 hover:text-red-900 remove-row">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                <td class="px-2 py-1">
+                    <input type="date" name="produk[${rowIdx}][expired_date]" class="expired-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required readonly>
                 </td>
-            </tr>
-        `;
-                document.getElementById('productTable').insertAdjacentHTML('beforeend', newRow);
-                rowCount++;
-            });
-
-            // Hapus baris
-            document.addEventListener('click', function(e) {
-                if (e.target.closest('.remove-row')) {
-                    const productTable = document.getElementById('productTable');
-                    if (productTable.children.length > 1) {
-                        e.target.closest('tr').remove();
-                        calculateGrandTotal();
-                    } else {
-                        alert('Minimal harus ada satu produk');
-                    }
+                <td class="px-2 py-1 text-center">
+                    <button type="button" class="hapus-row text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+            rowIdx++;
+        });
+        document.getElementById('produk-table').addEventListener('click', function(e) {
+            if (e.target.closest('.hapus-row')) {
+                const row = e.target.closest('tr');
+                if (document.querySelectorAll('#produk-table tr').length > 1) {
+                    row.remove();
+                    hitungGrandTotal();
+                } else {
+                    alert('Minimal satu produk!');
                 }
-            });
-
-        // Validasi form sebelum submit
-        document.getElementById('purchaseForm').addEventListener('submit', function(e) {
-                const productRows = document.querySelectorAll('#productTable tr');
-            if (productRows.length === 0) {
-                e.preventDefault();
-                    alert('Minimal harus ada satu produk');
-                    return false;
             }
-
-            let isValid = true;
-                productRows.forEach(function(row) {
-                    const productId = row.querySelector('.product-select').value;
-                    const quantity = row.querySelector('.quantity').value;
-                    const price = row.querySelector('.price').value;
-
-                    if (!productId || !quantity || !price) {
-                    isValid = false;
+        });
+        // Hitung total awal
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.total-input').forEach(input => input.value = '0');
+            hitungGrandTotal();
+        });
+    </script> --}}
+    <script>
+        let rowIdx = 1;
+    
+        // Fungsi format angka ke Rupiah
+        function formatRupiah(angka) {
+            return 'Rp ' + angka.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+    
+        // Hitung total per baris
+        function hitungTotalRow(row) {
+            const jumlah = parseFloat(row.querySelector('.jumlah-input').value) || 0;
+            const harga = parseFloat(row.querySelector('.harga-input').value) || 0;
+            const total = jumlah * harga;
+            row.querySelector('.total-input').value = formatRupiah(total);
+            hitungGrandTotal();
+        }
+    
+        // Hitung total keseluruhan
+        function hitungGrandTotal() {
+            let total = 0;
+            document.querySelectorAll('.total-input').forEach(input => {
+                const angka = parseFloat(input.value.replace(/[^\d]/g, '')) || 0;
+                total += angka;
+            });
+            document.getElementById('grand-total').value = formatRupiah(total);
+        }
+    
+        // Saat isi jumlah atau pilih produk berubah
+        document.getElementById('produk-table').addEventListener('input', function (e) {
+            const row = e.target.closest('tr');
+    
+            if (e.target.classList.contains('raw-material-select')) {
+                const selected = e.target.options[e.target.selectedIndex];
+                const hargaInput = row.querySelector('.harga-input');
+                const expiredInput = row.querySelector('.expired-input');
+    
+                hargaInput.value = selected.getAttribute('data-harga') || '';
+                expiredInput.value = selected.getAttribute('data-expired') || '';
+                hitungTotalRow(row);
+            }
+    
+            if (e.target.classList.contains('jumlah-input')) {
+                hitungTotalRow(row);
+            }
+        });
+    
+        // Tambah produk
+        document.getElementById('tambah-produk').addEventListener('click', function () {
+            const tbody = document.getElementById('produk-table');
+            const newRow = document.createElement('tr');
+    
+            newRow.innerHTML = `
+                <td class="px-2 py-1">
+                    <select name="produk[${rowIdx}][raw_material_id]" class="raw-material-select mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                        <option value="">Pilih Bahan</option>
+                        @foreach ($rawMaterials as $rawMaterial)
+                            <option value="{{ $rawMaterial->id }}" data-harga="{{ $rawMaterial->harga }}" data-expired="{{ \Carbon\Carbon::parse($rawMaterial->expired_date)->format('Y-m-d') }}">{{ $rawMaterial->nama }} ({{ $rawMaterial->kode }})</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td class="px-2 py-1">
+                    <input type="number" name="produk[${rowIdx}][jumlah]" class="jumlah-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="1" value="1" required>
+                </td>
+                <td class="px-2 py-1">
+                    <input type="number" name="produk[${rowIdx}][harga]" class="harga-input mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100" min="0" required readonly>
+                </td>
+                <td class="px-2 py-1">
+                    <input type="text" class="total-input mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100" value="Rp 0" readonly>
+                </td>
+                <td class="px-2 py-1">
+                    <input type="date" name="produk[${rowIdx}][expired_date]" class="expired-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required readonly>
+                </td>
+                <td class="px-2 py-1 text-center">
+                    <button type="button" class="hapus-row text-red-600 hover:text-red-900"><i class="fas fa-trash"></i></button>
+                </td>
+            `;
+    
+            tbody.appendChild(newRow);
+            rowIdx++;
+        });
+    
+        // Hapus baris produk
+        document.getElementById('produk-table').addEventListener('click', function (e) {
+            if (e.target.closest('.hapus-row')) {
+                const row = e.target.closest('tr');
+                if (document.querySelectorAll('#produk-table tr').length > 1) {
+                    row.remove();
+                    hitungGrandTotal();
+                } else {
+                    alert('Minimal satu produk!');
                 }
-            });
-
-            if (!isValid) {
-                e.preventDefault();
-                    alert('Semua field harus diisi');
-                    return false;
             }
-            });
-
-            // Hitung total awal
-            calculateGrandTotal();
+        });
+    
+        // Hitung total awal saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.total-input').forEach(input => input.value = formatRupiah(0));
+            hitungGrandTotal();
         });
     </script>
-</x-app-layout> 
+    
+</x-app-layout>

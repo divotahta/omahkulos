@@ -195,8 +195,8 @@ class StockController extends Controller
             $holdingCost = 0.2; // Biaya penyimpanan (20% dari harga)
             $annualDemand = $avgWeeklySales * 52; // 52 minggu dalam setahun
             
-            if ($product->harga_beli > 0 && $holdingCost > 0) {
-                $eoq = sqrt((2 * $annualDemand * $orderCost) / ($product->harga_beli * $holdingCost));
+            if ($product->harga_jual > 0 && $holdingCost > 0) {
+                $eoq = sqrt((2 * $annualDemand * $orderCost) / ($product->harga_jual * $holdingCost));
             } else {
                 $eoq = 0;
             }

@@ -45,15 +45,12 @@
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">Tanggal Pembelian</dt>
-                                    <dd class="mt-1 text-sm text-gray-900">{{ $purchase->purchase_date->format('d/m/Y') }}</dd>
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">Pemasok</dt>
-                                    <dd class="mt-1 text-sm text-gray-900">{{ $purchase->supplier->name }}</dd>
                                 </div>
                                 <div>
                                     <dt class="text-sm font-medium text-gray-500">Catatan</dt>
-                                    <dd class="mt-1 text-sm text-gray-900">{{ $purchase->notes ?? '-' }}</dd>
                                 </div>
                             </dl>
                         </div>
@@ -122,131 +119,12 @@
                         </div>
                     </div>
 
-                    <!-- History Persetujuan -->
-                    <div class="mt-8">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">History Persetujuan</h3>
-                        <div class="flow-root">
-                            <ul class="-mb-8">
-                                @foreach($purchase->approvalHistory as $history)
-                                <li>
-                                    <div class="relative pb-8">
-                                        @if(!$loop->last)
-                                        <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-                                        @endif
-                                        <div class="relative flex space-x-3">
-                                            <div>
-                                                <span class="h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white
-                                                    {{ $history->status === 'pending' ? 'bg-yellow-500' : '' }}
-                                                    {{ $history->status === 'approved' ? 'bg-green-500' : '' }}
-                                                    {{ $history->status === 'rejected' ? 'bg-red-500' : '' }}">
-                                                    @if($history->status === 'pending')
-                                                    <i class="fas fa-clock text-white"></i>
-                                                    @elseif($history->status === 'approved')
-                                                    <i class="fas fa-check text-white"></i>
-                                                    @else
-                                                    <i class="fas fa-times text-white"></i>
-                                                    @endif
-                                                </span>
-                                            </div>
-                                            <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                                                <div>
-                                                    <p class="text-sm text-gray-500">
-                                                        {{ $history->status === 'pending' ? 'Pembelian dibuat' : '' }}
-                                                        {{ $history->status === 'approved' ? 'Pembelian disetujui' : '' }}
-                                                        {{ $history->status === 'rejected' ? 'Pembelian ditolak' : '' }}
-                                                        oleh <span class="font-medium text-gray-900">{{ $history->createdBy->name }}</span>
-                                                    </p>
-                                                    @if($history->notes)
-                                                    <p class="mt-1 text-sm text-gray-500">{{ $history->notes }}</p>
-                                                    @endif
-                                                </div>
-                                                <div class="text-right text-sm whitespace-nowrap text-gray-500">
-                                                    <time datetime="{{ $history->created_at }}">{{ $history->created_at->format('d/m/Y H:i') }}</time>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+                    
             </div>
         </div>
     </div>
 
-    <!-- Modal Persetujuan -->
-    <div id="approvalModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form action="{{ route('owner.purchases.approve', $purchase) }}" method="POST">
-                    @csrf
-                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                                    Konfirmasi Persetujuan
-                                </h3>
-                                <div class="mt-2">
-                                    <p class="text-sm text-gray-500">
-                                        Apakah Anda yakin ingin menyetujui pembelian ini?
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
-                            Setujui
-                        </button>
-                        <button type="button" onclick="hideApprovalModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Batal
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Penolakan -->
-    <div id="rejectionModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form action="{{ route('owner.purchases.reject', $purchase) }}" method="POST">
-                    @csrf
-                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                                    Alasan Penolakan
-                                </h3>
-                                <div class="mt-2">
-                                    <textarea name="rejection_reason" rows="4" required
-                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                        placeholder="Masukkan alasan penolakan..."></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                            Tolak
-                        </button>
-                        <button type="button" onclick="hideRejectionModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                            Batal
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    
 
     @push('scripts')
     <script>

@@ -20,7 +20,8 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             TransactionSeeder::class,
             StockHistorySeeder::class,
-            StockTriggerSeeder::class,
+            RawMaterialSeeder::class,
+            // StockTriggerSeeder::class,
             // NotificationSeeder::class,
             // StockAlertSeeder::class,
         ]);

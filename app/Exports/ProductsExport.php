@@ -48,7 +48,6 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
             'Nama Produk',
             'Kategori',
             'Satuan',
-            'Harga Beli',
             'Harga Jual',
             'Stok',
             'Status Stok'

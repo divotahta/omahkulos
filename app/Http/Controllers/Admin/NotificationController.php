@@ -171,7 +171,7 @@ class NotificationController extends Controller
         
         // Biaya penyimpanan per unit per tahun (holding cost)
         // Menggunakan 20% dari harga beli sebagai holding cost
-        $holdingCost = $product->harga_beli * 0.2;
+        $holdingCost = $product->harga_jual * 0.2;
         
         // Hitung EOQ
         $eoq = sqrt((2 * $annualDemand * $orderCost) / $holdingCost);

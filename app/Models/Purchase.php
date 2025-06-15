@@ -13,28 +13,21 @@ class Purchase extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'purchases';
+
     protected $fillable = [
         'pemasok_id',
         'tanggal_pembelian',
         'nomor_pembelian',
         'total_amount',
-        'catatan',
         'status_pembelian',
+        'catatan',
         'dibuat_oleh',
-        'disetujui_oleh',
-        'disetujui_pada',
-        'ditolak_oleh',
-        'ditolak_pada',
-        'alasan_penolakan',
-        'diterima_oleh',
-        'diterima_pada'
     ];
 
     protected $casts = [
         'tanggal_pembelian' => 'date',
-        'disetujui_pada' => 'datetime',
-        'ditolak_pada' => 'datetime',
-        'diterima_pada' => 'datetime'
+        'total_amount' => 'decimal:2',
     ];
 
     public function supplier()
@@ -47,25 +40,11 @@ class Purchase extends Model
         return $this->hasMany(PurchaseDetail::class, 'pembelian_id');
     }
 
-    public function approvedBy()
-    {
-        return $this->belongsTo(User::class, 'disetujui_oleh');
-    }
-
-    public function rejectedBy()
-    {
-        return $this->belongsTo(User::class, 'ditolak_oleh');
-    }
-
-    public function receivedBy()
-    {
-        return $this->belongsTo(User::class, 'diterima_oleh');
-    }
-
-    public function createdBy()
+    public function user()
     {
         return $this->belongsTo(User::class, 'dibuat_oleh');
     }
+
 
     public function generateInvoiceNumber()
     {
@@ -74,4 +53,51 @@ class Purchase extends Model
         $newNumber = $lastNumber + 1;
         return 'PUR' . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
     }
-} 
+
+    public function scopeByStatus($query, $status)
+    {
+        return $query->where('status_pembelian', $status);
+    }
+
+    public function scopeByDateRange($query, $startDate, $endDate)
+    {
+        return $query->whereBetween('tanggal_pembelian', [$startDate, $endDate]);
+    }
+
+    public function scopeBySupplier($query, $supplierId)
+    {
+        return $query->where('pemasok_id', $supplierId);
+    }
+
+    public function scopeSearch($query, $search)
+    {
+        return $query->where('nomor_pembelian', 'like', "%{$search}%");
+    }
+
+    public function calculateTotal()
+    {
+        return $this->details()->sum('total');
+    }
+
+    public function updateStatus($status, $userId = null)
+    {
+        $this->status_pembelian = $status;
+
+        switch ($status) {
+            case 'approved':
+                $this->disetujui_oleh = $userId;
+                $this->disetujui_pada = now();
+                break;
+            case 'rejected':
+                $this->ditolak_oleh = $userId;
+                $this->ditolak_pada = now();
+                break;
+            case 'received':
+                $this->diterima_oleh = $userId;
+                $this->diterima_pada = now();
+                break;
+        }
+
+        $this->save();
+    }
+}

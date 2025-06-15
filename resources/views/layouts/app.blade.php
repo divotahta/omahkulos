@@ -20,6 +20,7 @@
 <body class="font-sans antialiased bg-gray-50">
     <div class="min-h-screen">
         <!-- Sidebar -->
+        <!-- Sidebar -->
         <aside
             class="fixed inset-y-0 left-0 bg-white shadow-lg max-h-screen w-64 transform transition-transform duration-300 ease-in-out"
             id="sidebar">
@@ -46,19 +47,27 @@
                                     POS
                                 </a>
 
-                                <!-- Manajemen Produk -->
+                                <!-- Manajemen Bahan Baku -->
+                                <a href="{{ route('admin.raw-materials.index') }}"
+                                    class="flex items-center {{ request()->routeIs('admin.raw-materials.*') ? 'bg-blue-100 text-blue-900' : 'bg-white hover:bg-blue-50 text-gray-900' }} rounded-xl font-bold text-sm py-3 px-4">
+                                    <i class="fas fa-boxes mr-4"></i>
+                                    Bahan Baku
+                                </a>
+
+                                <!-- Pembelian -->
                                 <a href="{{ route('admin.purchases.index') }}"
                                     class="flex items-center {{ request()->routeIs('admin.purchases.*') ? 'bg-blue-100 text-blue-900' : 'bg-white hover:bg-blue-50 text-gray-900' }} rounded-xl font-bold text-sm py-3 px-4">
                                     <i class="fas fa-shopping-basket mr-4"></i>
                                     Pembelian
                                 </a>
 
-                                <!-- Pembelian Dropdown -->
+                                <!-- Transaksi -->
                                 <a href="{{ route('admin.transactions.index') }}"
                                     class="flex items-center {{ request()->routeIs('admin.transactions.*') ? 'bg-blue-100 text-blue-900' : 'bg-white hover:bg-blue-50 text-gray-900' }} rounded-xl font-bold text-sm py-3 px-4">
                                     <i class="fas fa-shopping-cart mr-4"></i>
                                     Transaksi
                                 </a>
+
                                 <!-- Manajemen Produk -->
                                 <a href="{{ route('admin.products.index') }}"
                                     class="flex items-center {{ request()->routeIs('admin.products.*') ? 'bg-blue-100 text-blue-900' : 'bg-white hover:bg-blue-50 text-gray-900' }} rounded-xl font-bold text-sm py-3 px-4">
@@ -69,7 +78,7 @@
                                 <!-- Manajemen Stok -->
                                 <a href="{{ route('admin.stocks.index') }}"
                                     class="flex items-center {{ request()->routeIs('admin.stocks.*') ? 'bg-blue-100 text-blue-900' : 'bg-white hover:bg-blue-50 text-gray-900' }} rounded-xl font-bold text-sm py-3 px-4">
-                                    <i class="fas fa-box mr-4"></i>
+                                    <i class="fas fa-warehouse mr-4"></i>
                                     Manajemen Stok
                                 </a>
 
@@ -94,6 +103,33 @@
                                     Manajemen Pemasok
                                 </a>
 
+                                <!-- Laporan -->
+                                <div x-data="{ open: false }" class="relative">
+                                    <button @click="open = !open"
+                                        class="flex items-center justify-between w-full {{ request()->routeIs('admin.reports.*') ? 'bg-blue-100 text-blue-900' : 'bg-white hover:bg-blue-50 text-gray-900' }} rounded-xl font-bold text-sm py-3 px-4">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-chart-bar mr-4"></i>
+                                            Laporan
+                                        </div>
+                                        <i class="fas fa-chevron-down transition-transform"
+                                            :class="{ 'transform rotate-180': open }"></i>
+                                    </button>
+                                    {{-- <div x-show="open" @click.away="open = false" class="mt-2 space-y-1 pl-12">
+                                        <a href="{{ route('admin.reports.sales') }}"
+                                            class="block py-2 px-4 text-sm {{ request()->routeIs('admin.reports.sales') ? 'text-blue-900' : 'text-gray-600 hover:text-gray-900' }}">
+                                            Laporan Penjualan
+                                        </a>
+                                        <a href="{{ route('admin.reports.purchases') }}"
+                                            class="block py-2 px-4 text-sm {{ request()->routeIs('admin.reports.purchases') ? 'text-blue-900' : 'text-gray-600 hover:text-gray-900' }}">
+                                            Laporan Pembelian
+                                        </a>
+                                        <a href="{{ route('admin.reports.stock') }}"
+                                            class="block py-2 px-4 text-sm {{ request()->routeIs('admin.reports.stock') ? 'text-blue-900' : 'text-gray-600 hover:text-gray-900' }}">
+                                            Laporan Stok
+                                        </a>
+                                    </div> --}}
+                                </div>
+
                                 <!-- Menu Owner -->
                             @else
                                 <!-- Dashboard -->
@@ -103,12 +139,32 @@
                                     Dashboard
                                 </a>
 
-                                <!-- Laporan Pembelian -->
-                                <a href="{{ route('owner.purchases.report') }}"
-                                    class="flex items-center {{ request()->routeIs('owner.purchases.report') ? 'bg-blue-100 text-blue-900' : 'bg-white hover:bg-blue-50 text-gray-900' }} rounded-xl font-bold text-sm py-3 px-4">
-                                    <i class="fas fa-file-invoice mr-4"></i>
-                                    Laporan Pembelian
-                                </a>
+                                <!-- Laporan -->
+                                <div x-data="{ open: false }" class="relative">
+                                    <button @click="open = !open"
+                                        class="flex items-center justify-between w-full {{ request()->routeIs('owner.reports.*') ? 'bg-blue-100 text-blue-900' : 'bg-white hover:bg-blue-50 text-gray-900' }} rounded-xl font-bold text-sm py-3 px-4">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-chart-bar mr-4"></i>
+                                            Laporan
+                                        </div>
+                                        <i class="fas fa-chevron-down transition-transform"
+                                            :class="{ 'transform rotate-180': open }"></i>
+                                    </button>
+                                    <div x-show="open" @click.away="open = false" class="mt-2 space-y-1 pl-12">
+                                        <a href="{{ route('owner.reports.sales') }}"
+                                            class="block py-2 px-4 text-sm {{ request()->routeIs('owner.reports.sales') ? 'text-blue-900' : 'text-gray-600 hover:text-gray-900' }}">
+                                            Laporan Penjualan
+                                        </a>
+                                        <a href="{{ route('owner.reports.purchases') }}"
+                                            class="block py-2 px-4 text-sm {{ request()->routeIs('owner.reports.purchases') ? 'text-blue-900' : 'text-gray-600 hover:text-gray-900' }}">
+                                            Laporan Pembelian
+                                        </a>
+                                        <a href="{{ route('owner.reports.stock') }}"
+                                            class="block py-2 px-4 text-sm {{ request()->routeIs('owner.reports.stock') ? 'text-blue-900' : 'text-gray-600 hover:text-gray-900' }}">
+                                            Laporan Stok
+                                        </a>
+                                    </div>
+                                </div>
 
                                 <!-- Manajemen Produk -->
                                 <a href="{{ route('owner.products.index') }}"
@@ -147,6 +203,7 @@
             </div>
         </aside>
 
+
         <!-- Main Content -->
         <main class="p-4 ml-64">
             <!-- Header -->
@@ -181,14 +238,20 @@
                 <div class="flex items-center gap-4">
                     <!-- Notifications Dropdown -->
                     <div class="relative" x-data="notifications()" x-init="init()">
-                        <button @click="open = !open" class="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none">
+                        <button @click="open = !open"
+                            class="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
                             </svg>
-                            <span x-show="unreadCount > 0" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full" x-text="unreadCount"></span>
+                            <span x-show="unreadCount > 0"
+                                class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full"
+                                x-text="unreadCount"></span>
                         </button>
 
-                        <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg overflow-hidden z-50">
+                        <div x-show="open" @click.away="open = false"
+                            class="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg overflow-hidden z-50">
                             <div class="p-4 border-b border-gray-200">
                                 <h3 class="text-lg font-semibold text-gray-900">Notifikasi</h3>
                             </div>
@@ -199,21 +262,28 @@
                                     </div>
                                 </template>
                                 <template x-for="notification in notifications" :key="notification.id">
-                                    <div class="p-4 hover:bg-gray-50 border-b border-gray-100" :class="{ 'bg-blue-50': !notification.dibaca }">
+                                    <div class="p-4 hover:bg-gray-50 border-b border-gray-100"
+                                        :class="{ 'bg-blue-50': !notification.dibaca }">
                                         <div class="flex items-start">
                                             <div class="flex-1">
-                                                <a :href="notification.link" class="block hover:bg-gray-50 -m-4 p-4 rounded-lg transition-colors duration-150">
+                                                <a :href="notification.link"
+                                                    class="block hover:bg-gray-50 -m-4 p-4 rounded-lg transition-colors duration-150">
                                                     <div class="flex items-center justify-between">
-                                                        <p class="text-sm font-medium text-gray-900" x-text="notification.judul"></p>
-                                                        <span x-show="!notification.dibaca" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        <p class="text-sm font-medium text-gray-900"
+                                                            x-text="notification.judul"></p>
+                                                        <span x-show="!notification.dibaca"
+                                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                             Baru
                                                         </span>
                                                     </div>
-                                                    <p class="text-sm text-gray-600 mt-1" x-text="notification.pesan"></p>
-                                                    <p class="text-xs text-gray-500 mt-1" x-text="formatDate(notification.created_at)"></p>
+                                                    <p class="text-sm text-gray-600 mt-1" x-text="notification.pesan">
+                                                    </p>
+                                                    <p class="text-xs text-gray-500 mt-1"
+                                                        x-text="formatDate(notification.created_at)"></p>
                                                 </a>
                                             </div>
-                                            <button x-show="!notification.dibaca" @click="markAsRead(notification.id)" class="ml-4 text-sm text-blue-600 hover:text-blue-800">
+                                            <button x-show="!notification.dibaca" @click="markAsRead(notification.id)"
+                                                class="ml-4 text-sm text-blue-600 hover:text-blue-800">
                                                 Tandai dibaca
                                             </button>
                                         </div>
@@ -221,20 +291,41 @@
                                 </template>
                             </div>
                             <div class="p-4 border-t border-gray-200">
-                                <a href="{{ route('admin.notifications.index') }}" class="text-sm text-blue-600 hover:text-blue-800">
+                                <a href="{{ route('admin.notifications.index') }}"
+                                    class="text-sm text-blue-600 hover:text-blue-800">
                                     Lihat semua notifikasi
                                 </a>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex items-center">
-                        <span class="text-gray-700 mr-4">{{ auth()->user()->nama }}</span>
-                        <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                            <i class="fas fa-user"></i>
+                    <!-- Profile Dropdown -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
+                            <span class="text-gray-700">{{ auth()->user()->nama }}</span>
+                            <div
+                                class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        </button>
+
+                        <div x-show="open" @click.away="open = false"
+                            class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50">
+                            <a href="{{ route('profile.edit') }}"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user-cog mr-2"></i>
+                                Profil
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit"
+                                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>
+                                    Logout
+                                </button>
+                            </form>
                         </div>
-                    </div>
-                </div>
+
             </header>
 
             <!-- Page Content -->
@@ -305,26 +396,27 @@
 
                 markAsRead(id) {
                     fetch(`/admin/notifications/${id}/mark-as-read`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const notification = this.notifications.find(n => n.id === id);
-                            if (notification && !notification.dibaca) {
-                                notification.dibaca = true;
-                                this.unreadCount--;
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                    .content,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
                             }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error marking notification as read:', error);
-                    });
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const notification = this.notifications.find(n => n.id === id);
+                                if (notification && !notification.dibaca) {
+                                    notification.dibaca = true;
+                                    this.unreadCount--;
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error marking notification as read:', error);
+                        });
                 },
 
                 formatDate(dateString) {

@@ -34,7 +34,7 @@
 
                             <div>
                                 <label for="purchase_price" class="block text-sm font-medium text-gray-700">Harga Beli per Unit (Rp)</label>
-                                <input type="number" name="purchase_price" id="purchase_price" required min="0" step="1000"
+                                <input type="number" name="purchase_price" id="purchase_price" required min="0.01" step="0.01"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
 
@@ -50,19 +50,19 @@
 
                             <div>
                                 <label for="demand" class="block text-sm font-medium text-gray-700">Jumlah Permintaan</label>
-                                <input type="number" name="demand" id="demand" required min="0" step="0.01"
+                                <input type="number" name="demand" id="demand" required min="0.01" step="0.01"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
 
                             <div>
                                 <label for="order_cost" class="block text-sm font-medium text-gray-700">Biaya Pemesanan (Rp)</label>
-                                <input type="number" name="order_cost" id="order_cost" required min="0" step="1000"
+                                <input type="number" name="order_cost" id="order_cost" required min="0.01" step="0.01"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
 
                             <div>
                                 <label for="holding_cost_percentage" class="block text-sm font-medium text-gray-700">Persentase Biaya Penyimpanan (%)</label>
-                                <input type="number" name="holding_cost_percentage" id="holding_cost_percentage" required min="0" max="100" step="0.01"
+                                <input type="number" name="holding_cost_percentage" id="holding_cost_percentage" required min="0.01" max="100" step="0.01"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             </div>
                         </div>
@@ -124,7 +124,11 @@
         document.getElementById('eoqForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // Reset error messages
+            document.querySelectorAll('.error-message').forEach(el => el.remove());
+            
             const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
             
             fetch('{{ route("admin.eoq.calculate") }}', {
                 method: 'POST',
@@ -133,9 +137,29 @@
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(Object.fromEntries(formData))
+                body: JSON.stringify(data)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        if (data.messages) {
+                            // Handle validation errors
+                            Object.keys(data.messages).forEach(field => {
+                                const input = document.querySelector(`[name="${field}"]`);
+                                if (input) {
+                                    const errorDiv = document.createElement('div');
+                                    errorDiv.className = 'error-message text-red-500 text-sm mt-1';
+                                    errorDiv.textContent = data.messages[field][0];
+                                    input.parentNode.appendChild(errorDiv);
+                                }
+                            });
+                            throw new Error('Mohon periksa kembali input Anda');
+                        }
+                        throw new Error(data.error || 'Terjadi kesalahan saat menghitung EOQ');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 document.getElementById('result').classList.remove('hidden');
                 document.getElementById('result-product').textContent = data.product.nama_produk;
@@ -149,7 +173,21 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan saat menghitung EOQ');
+                alert(error.message);
+            });
+        });
+
+        // Validasi input numerik
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', function() {
+                if (this.value < 0) {
+                    this.value = 0;
+                }
+                // Hapus error message jika ada
+                const errorMessage = this.parentNode.querySelector('.error-message');
+                if (errorMessage) {
+                    errorMessage.remove();
+                }
             });
         });
     </script>

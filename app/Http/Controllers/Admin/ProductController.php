@@ -54,7 +54,6 @@ class ProductController extends Controller
             'kode_produk' => 'required|string|max:50|unique:products',
             'kategori_id' => 'required|exists:categories,id',
             'unit_id' => 'required|exists:units,id',
-            'harga_beli' => 'required|numeric|min:0',
             'harga_jual' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
             'gambar_produk' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
@@ -89,7 +88,6 @@ class ProductController extends Controller
             'kode_produk' => 'required|string|max:50|unique:products,kode_produk,' . $product->id,
             'kategori_id' => 'required|exists:categories,id',
             'unit_id' => 'required|exists:units,id',
-            'harga_beli' => 'required|numeric|min:0',
             'harga_jual' => 'required|numeric|min:0',
             'stok' => 'required|integer|min:0',
             'gambar_produk' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'

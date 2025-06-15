@@ -67,20 +67,7 @@
                                 @enderror
                             </div>
 
-                            <!-- Harga Beli -->
-                            <div>
-                                <label for="harga_beli" class="block text-sm font-medium text-gray-700">Harga Beli</label>
-                                <div class="mt-1 relative rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 sm:text-sm">Rp</span>
-                                    </div>
-                                    <input type="number" name="harga_beli" id="harga_beli" value="{{ old('harga_beli') }}" 
-                                        class="pl-12 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                </div>
-                                @error('harga_beli')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+                           
 
                             <!-- Harga Jual -->
                             <div>
