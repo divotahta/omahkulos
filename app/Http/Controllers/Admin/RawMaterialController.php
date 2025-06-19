@@ -26,6 +26,13 @@ class RawMaterialController extends Controller
         $suppliers = Supplier::all();
         return view('Admin.raw-materials.create', compact('lastRawMaterial', 'suppliers'));
     }
+
+    public function show(RawMaterial $rawMaterial)
+    {
+        $rawMaterial->load('supplier');
+        return view('Admin.raw-materials.show', compact('rawMaterial'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([

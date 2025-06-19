@@ -183,6 +183,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('suppliers/import', [SupplierController::class, 'import'])->name('suppliers.import');
     Route::get('suppliers/export', [SupplierController::class, 'export'])->name('suppliers.export');
     Route::post('suppliers/broadcast', [SupplierController::class, 'broadcast'])->name('suppliers.broadcast');
+    Route::get('suppliers/{supplier}/product-history', [SupplierController::class, 'productHistory'])->name('suppliers.product-history');
 
     // EOQ Calculator Routes
     Route::get('/stocks/eoq-calculator', [EoqCalculatorController::class, 'index'])->name('stocks.eoq.calculator');

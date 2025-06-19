@@ -91,7 +91,7 @@ class SupplierController extends Controller
 
     public function show(Supplier $supplier)
     {
-        $supplier->load('purchases.details.product');
+        $supplier->load('purchases.details.rawMaterial');
         return view('admin.suppliers.show', compact('supplier'));
     }
 
@@ -184,5 +184,15 @@ class SupplierController extends Controller
 
         return redirect()->route('admin.suppliers.index')
             ->with('success', 'Pesan berhasil dikirim ke pemasok yang dipilih');
+    }
+
+    public function productHistory(Supplier $supplier)
+    {
+        // Ambil semua detail pembelian dari supplier ini
+        $productHistory = \App\Models\PurchaseDetail::whereHas('purchase', function($q) use ($supplier) {
+            $q->where('pemasok_id', $supplier->id);
+        })->with('rawMaterial')->orderByDesc('id')->get();
+
+        return view('Admin.suppliers.product-history', compact('supplier', 'productHistory'));
     }
 } 
