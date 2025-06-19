@@ -71,12 +71,12 @@
                 <div class="feature-card p-6 bg-blue-50 rounded-xl text-center">
                     <img src="https://cdn-icons-png.flaticon.com/512/10951/10951884.png" alt="Inventori" class="h-24 mx-auto mb-4 pixabay-img">
                     <h3 class="font-bold text-lg mb-2">Manajemen Inventori</h3>
-                    <p class="text-gray-600">Pantau stok produk, kelola gudang, dan optimalkan level inventori Anda.</p>
+                    <p class="text-gray-600">Pantau stok produk dan optimalkan  inventori Anda.</p>
                 </div>
                 <div class="feature-card p-6 bg-blue-50 rounded-xl text-center">
                     <img src="https://cdn-icons-png.flaticon.com/512/2166/2166907.png" alt="Supplier" class="h-24 mx-auto mb-4 pixabay-img">
                     <h3 class="font-bold text-lg mb-2">Manajemen Pemasok</h3>
-                    <p class="text-gray-600">Kelola pemasok dan proses pembelian dengan mudah dan transparan.</p>
+                    <p class="text-gray-600">Kelola pemasok dan pencatatan pembelian dengan mudah dan transparan.</p>
                 </div>
                 <div class="feature-card p-6 bg-blue-50 rounded-xl text-center">
                     <img src="https://cdn-icons-png.flaticon.com/512/9746/9746772.png" alt="Pelanggan" class="h-24 mx-auto mb-4 pixabay-img">
